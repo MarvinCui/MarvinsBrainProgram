@@ -3,6 +3,26 @@ import BrainScene from './BrainScene'
 import { brainMeasures, corticalStats, downloadAssets, regionNotes, reportAssets } from './data'
 import type { DataMode, RegionSelection, ViewMode } from './types'
 
+const mindStates = [
+  {
+    id: 'daydreamer',
+    label: 'Daydreamer',
+    regions: ['precuneus', 'posteriorcingulate', 'rostralmiddlefrontal', 'superiorfrontal', 'inferiorparietal', 'middletemporal'],
+  },
+  {
+    id: 'observer',
+    label: 'World Observer',
+    regions: ['lateraloccipital', 'pericalcarine', 'cuneus', 'fusiform', 'superiorparietal', 'postcentral'],
+  },
+  {
+    id: 'meditator',
+    label: 'Meditator',
+    regions: ['rostralanteriorcingulate', 'caudalanteriorcingulate', 'insula', 'superiorfrontal', 'precuneus', 'parahippocampal'],
+  },
+] as const
+
+type MindStateId = typeof mindStates[number]['id']
+
 const reports = [
   {
     id: 'wais', index: '01', title: 'WAIS–RC', subtitle: 'Wechsler Adult Intelligence Scale', date: '08 JUN 2026',
@@ -84,6 +104,8 @@ export default function App() {
   const [activeReport, setActiveReport] = useState<typeof reports[number] | null>(null)
   const [reportPage, setReportPage] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [hoveredMindState, setHoveredMindState] = useState<MindStateId | null>(null)
+  const [lockedMindState, setLockedMindState] = useState<MindStateId | null>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const [lineTarget, setLineTarget] = useState({ x: 0, y: 0 })
@@ -92,6 +114,18 @@ export default function App() {
   const meanParcelVolume = useMemo(() => corticalStats.reduce((sum, region) => sum + region.grayVolume, 0) / corticalStats.length, [])
   const shown = selection ?? { ...defaultRegion, code: 0 }
   const relativeToMean = (shown.grayVolume / meanParcelVolume) * 100
+  const activeMindStateId = hoveredMindState ?? lockedMindState
+  const activeMindState = mindStates.find(state => state.id === activeMindStateId)
+
+  const previewMindState = (id: MindStateId) => {
+    setDataMode('anatomy')
+    setHoveredMindState(id)
+  }
+
+  const toggleMindState = (id: MindStateId) => {
+    setDataMode('anatomy')
+    setLockedMindState(current => current === id ? null : id)
+  }
 
   useEffect(() => {
     const update = () => {
@@ -134,7 +168,7 @@ export default function App() {
         </div>
 
         <div className="brain-stage" ref={stageRef}>
-          <BrainScene dataMode={dataMode} viewMode={viewMode} autoRotate={autoRotate} onSelect={setSelection} onLoading={setLoading} />
+          <BrainScene dataMode={dataMode} viewMode={viewMode} autoRotate={autoRotate} highlightedRegions={activeMindState?.regions ?? []} onSelect={setSelection} onLoading={setLoading} />
           {loading && <div className="brain-loader"><span /><p>RECONSTRUCTING CORTICAL SURFACE</p><small>149,495 + 146,427 vertices</small></div>}
           <div className="axis-labels" aria-hidden="true"><span className="axis-a">A</span><span className="axis-p">P</span><span className="axis-l">L</span><span className="axis-r">R</span></div>
           {dataMode === 'anatomy' && <LeaderLine point={selection?.screen} target={lineTarget} />}
@@ -145,6 +179,24 @@ export default function App() {
             <span />
             {dataMode === 'anatomy' && <>{(['both', 'lh', 'rh'] as ViewMode[]).map(mode => <button key={mode} className={viewMode === mode ? 'active' : ''} onClick={() => setViewMode(mode)}>{mode === 'both' ? 'Bilateral' : mode.toUpperCase()}</button>)}<span /></>}
             <button className={autoRotate ? 'active' : ''} onClick={() => setAutoRotate(v => !v)} aria-pressed={autoRotate}>↻ Auto</button>
+          </div>
+
+          <div className="mind-states" aria-label="Explore functional networks associated with three traits">
+            <div className="mind-states-line">
+              <span>I’m a</span>
+              {mindStates.map((state, index) => <span className="mind-state-item" key={state.id}>
+                <button
+                  className={activeMindStateId === state.id ? 'active' : ''}
+                  onPointerEnter={() => previewMindState(state.id)}
+                  onPointerLeave={() => setHoveredMindState(null)}
+                  onFocus={() => previewMindState(state.id)}
+                  onBlur={() => setHoveredMindState(null)}
+                  onClick={() => toggleMindState(state.id)}
+                  aria-pressed={lockedMindState === state.id}
+                >{state.label}</button>
+                {index < mindStates.length - 1 && <i aria-hidden="true">,</i>}
+              </span>)}
+            </div>
           </div>
 
           {dataMode === 'anatomy' ? <aside className="region-card" ref={cardRef}>

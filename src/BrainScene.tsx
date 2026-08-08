@@ -13,6 +13,7 @@ type Props = {
   dataMode: DataMode
   viewMode: ViewMode
   autoRotate: boolean
+  highlightedRegions: readonly string[]
   onSelect: (selection: RegionSelection | null) => void
   onLoading: (loading: boolean) => void
 }
@@ -131,17 +132,19 @@ function readDwiPreview(buffer: ArrayBuffer) {
   return { positions: new Float32Array(positions), colors: new Float32Array(colors), lineCount }
 }
 
-export default function BrainScene({ dataMode, viewMode, autoRotate, onSelect, onLoading }: Props) {
+export default function BrainScene({ dataMode, viewMode, autoRotate, highlightedRegions, onSelect, onLoading }: Props) {
   const mountRef = useRef<HTMLDivElement>(null)
   const modeRef = useRef(viewMode)
   const dataModeRef = useRef(dataMode)
   const rotateRef = useRef(autoRotate)
+  const focusRef = useRef(highlightedRegions)
   const callbackRef = useRef(onSelect)
   const [failed, setFailed] = useState(false)
 
   useEffect(() => { modeRef.current = viewMode }, [viewMode])
   useEffect(() => { dataModeRef.current = dataMode; if (dataMode === 'dwi') callbackRef.current(null) }, [dataMode])
   useEffect(() => { rotateRef.current = autoRotate }, [autoRotate])
+  useEffect(() => { focusRef.current = highlightedRegions }, [highlightedRegions])
   useEffect(() => { callbackRef.current = onSelect }, [onSelect])
 
   useEffect(() => {
@@ -155,9 +158,9 @@ export default function BrainScene({ dataMode, viewMode, autoRotate, onSelect, o
     const scene = new THREE.Scene()
     scene.fog = new THREE.FogExp2(0x07100f, 0.0025)
     const camera = new THREE.PerspectiveCamera(34, host.clientWidth / host.clientHeight, 0.1, 1000)
-    camera.position.set(0, 18, 255)
+    camera.position.set(0, 18, window.innerWidth <= 720 ? 290 : 275)
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' })
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth <= 720 ? 1.4 : 2))
     renderer.setSize(host.clientWidth, host.clientHeight)
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
@@ -188,21 +191,30 @@ export default function BrainScene({ dataMode, viewMode, autoRotate, onSelect, o
     const pointer = new THREE.Vector2(9, 9)
     let pointerActive = false
     let lastHover = 0
+    let lastFocusSignature = ''
+
+    const paintFocusedRegions = () => {
+      const focused = new Set(focusRef.current)
+      const hasFocus = focused.size > 0
+      meshes.forEach(mesh => {
+        const colorAttr = mesh.geometry.getAttribute('color') as THREE.BufferAttribute
+        const colors = colorAttr.array as Float32Array
+        const { annot, baseColors } = mesh.userData
+        for (let i = 0; i < annot.values.length; i++) {
+          const isFocused = focused.has(annot.names.get(annot.values[i]) ?? '')
+          const backgroundLevel = hasFocus ? .38 : 1
+          colors[i * 3] = isFocused ? 1 : baseColors[i * 3] * backgroundLevel
+          colors[i * 3 + 1] = isFocused ? .12 : baseColors[i * 3 + 1] * backgroundLevel
+          colors[i * 3 + 2] = isFocused ? .38 : baseColors[i * 3 + 2] * backgroundLevel
+        }
+        colorAttr.needsUpdate = true
+      })
+    }
 
     const restore = () => {
       if (!current) return
-      const colorAttr = current.mesh.geometry.getAttribute('color') as THREE.BufferAttribute
-      const colors = colorAttr.array as Float32Array
-      const { annot, baseColors } = current.mesh.userData
-      for (let i = 0; i < annot.values.length; i++) {
-        if (annot.values[i] === current.code) {
-          colors[i * 3] = baseColors[i * 3]
-          colors[i * 3 + 1] = baseColors[i * 3 + 1]
-          colors[i * 3 + 2] = baseColors[i * 3 + 2]
-        }
-      }
-      colorAttr.needsUpdate = true
       current = null
+      paintFocusedRegions()
     }
 
     const highlight = (mesh: BrainMesh, code: number) => {
@@ -294,6 +306,8 @@ export default function BrainScene({ dataMode, viewMode, autoRotate, onSelect, o
       }
       buildMesh(lhSurface, lhAnnot, 'lh')
       buildMesh(rhSurface, rhAnnot, 'rh')
+      lastFocusSignature = focusRef.current.join('|')
+      paintFocusedRegions()
       const bounds = new THREE.Box3().setFromObject(group)
       const center = bounds.getCenter(new THREE.Vector3())
       group.position.sub(center)
@@ -315,6 +329,12 @@ export default function BrainScene({ dataMode, viewMode, autoRotate, onSelect, o
 
     const animate = () => {
       frame = requestAnimationFrame(animate)
+      const focusSignature = focusRef.current.join('|')
+      if (focusSignature !== lastFocusSignature) {
+        lastFocusSignature = focusSignature
+        current = null
+        paintFocusedRegions()
+      }
       controls.autoRotate = rotateRef.current && !pointerActive
       controls.autoRotateSpeed = .46
       controls.update()
