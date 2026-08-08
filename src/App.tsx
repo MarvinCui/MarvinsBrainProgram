@@ -231,7 +231,7 @@ export default function App() {
         </div>
       </section>
 
-      <footer><a className="brand" href="#brain"><span>MARVIN’S OPEN-SOURCE BODY PROGRAM</span></a><p>2026</p><a href="#brain">BACK TO CORTEX ↑</a></footer>
+      <footer><a className="brand" href="#brain"><span>MARVIN’S OPEN-SOURCE BODY PROGRAM</span></a><p>Copyright (c) 2026 Boran Cui</p><a href="#brain">BACK TO CORTEX ↑</a></footer>
 
       {activeReport && <div className="report-modal" role="dialog" aria-modal="true" aria-label={`${activeReport.title} original report`}>
         <button className="modal-backdrop" onClick={() => setActiveReport(null)} aria-label="Close report" />
