@@ -1,0 +1,25 @@
+/home/cuizaixu_lab/hesirong/CBR/freesurfer_subjects/sub001/mri
+/usr/nzx-cluster/apps/freesurfer/freesurfer/bin/mri_nu_correct.mni
+--no-rescale --i orig.mgz --o orig_nu.mgz --ants-n4 --n 1 --proto-iters 1000 --distance 50
+nIters 1
+mri_nu_correct.mni 7.1.1
+Linux fat01 3.10.0-957.el7.x86_64 #1 SMP Thu Nov 8 23:39:32 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+Fri Jun 12 11:58:05 CST 2026
+Found /dev/shm , will use for temp dir
+tmpdir is /dev/shm/tmp.mri_nu_correct.mni.418715
+cd /home/cuizaixu_lab/hesirong/CBR/freesurfer_subjects/sub001/mri
+AntsN4BiasFieldCorrectionFs -i orig.mgz -o /dev/shm/tmp.mri_nu_correct.mni.418715/nu0.mgz
+Using shrink factor: 4
+mri_convert /dev/shm/tmp.mri_nu_correct.mni.418715/nu0.mgz orig_nu.mgz --like orig.mgz --conform
+mri_convert /dev/shm/tmp.mri_nu_correct.mni.418715/nu0.mgz orig_nu.mgz --like orig.mgz --conform 
+reading from /dev/shm/tmp.mri_nu_correct.mni.418715/nu0.mgz...
+TR=1500.00, TE=0.00, TI=0.00, flip angle=0.00
+i_ras = (-1, 1.16415e-09, 1.86265e-09)
+j_ras = (-1.86265e-09, 0, -1)
+k_ras = (9.31323e-10, 1, -7.45058e-09)
+INFO: transform src into the like-volume: orig.mgz
+writing to orig_nu.mgz...
+ 
+ 
+Fri Jun 12 12:01:04 CST 2026
+mri_nu_correct.mni done

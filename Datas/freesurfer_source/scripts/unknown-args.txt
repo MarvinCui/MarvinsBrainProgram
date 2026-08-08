@@ -1,0 +1,8 @@
+-i
+t1_mprage_sag_p2_0.8mmiso_6.nii.gz
+-s
+sub001
+-all
+-parallel
+-openmp
+72

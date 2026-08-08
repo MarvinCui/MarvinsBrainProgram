@@ -1,0 +1,13 @@
+------------------------------
+SUBJECT sub001
+START_TIME Fri Jun 12 11:57:44 CST 2026
+END_TIME Fri Jun 12 17:49:20 CST 2026
+RUNTIME_HOURS 5.860
+USER hesirong
+HOST fat01
+PROCESSOR x86_64
+OS Linux
+UNAME Linux fat01 3.10.0-957.el7.x86_64 #1 SMP Thu Nov 8 23:39:32 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+VERSION 7.1.1 (freesurfer-linux-centos7_x86_64-7.1.1-20200723-8b40551)
+CMDPATH /usr/nzx-cluster/apps/freesurfer/freesurfer/bin/recon-all
+CMDARGS -i t1_mprage_sag_p2_0.8mmiso_6.nii.gz -s sub001 -all -parallel -openmp 72

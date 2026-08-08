@@ -1,0 +1,1 @@
+mris_register -curv ../surf/lh.sphere /usr/nzx-cluster/apps/freesurfer/freesurfer/average/lh.folding.atlas.acfb40.noaparc.i12.2016-08-02.tif ../surf/lh.sphere.reg
